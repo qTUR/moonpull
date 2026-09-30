@@ -1,0 +1,17 @@
+{
+  "name": "moonpull",
+  "version": "1.0.0",
+  "description": "Drag the moon to lift the sea. A browser game.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "sim": "node tools/sim.cjs",
+    "check": "python3 tests/check.py",
+    "gallery": "python3 tools/promo.py"
+  },
+  "author": "qTUR",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "terser": "^5.51.2"
+  },
+  "private": true
+}
