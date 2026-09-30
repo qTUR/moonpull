@@ -139,9 +139,8 @@ def main_youtube(p):
     check('second chance revives when the ad is watched', wait_for(page, "__moon.screen === null && !__moon.world.dead && __moon.world.flames === __moon.world.maxFlames", 5))
 
     # --- pause / resume from the platform ---
-    t_before = page.evaluate('__moon.world.t')
     saves_before = page.evaluate("__yt.calls.filter(c => c[0] === 'saveData').length")
-    page.evaluate("__ytfire('pause')")
+    t_before = page.evaluate("() => { __ytfire('pause'); return __moon.world.t; }")
     time.sleep(0.6)
     t_after = page.evaluate('__moon.world.t')
     snd = page.evaluate('Sound.state()')
