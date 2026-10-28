@@ -27,7 +27,7 @@ async function page(mode) {
   html = html.replace(m[0], `<script>${js}</script></body>`);
   // style
   html = html.replace(/<style>([\s\S]*?)<\/style>/, (_, css) => `<style>${fontFace(mode === 'artifact' ? 'inline' : 'file')}${squashCss(css.replace('/*@FONTFACE*/', ''))}</style>`);
-  const sdk = mode === 'artifact' ? '' : '<script src="https://www.youtube.com/game_api/v1"></script>';
+  const sdk = mode === 'artifact' ? '' : mode === 'play' ? '<script>window.__noAds=1</script>' : '<script src="https://www.youtube.com/game_api/v1"></script>';
   html = html.replace('<!--@SDK-->', sdk);
   let meta = '';
   if (mode === 'pages') {
@@ -60,12 +60,16 @@ async function page(mode) {
 
 const out = ROOT + 'dist/';
 rmSync(out, { recursive: true, force: true });
-for (const d of ['artifact', 'youtube/fonts', 'pages/fonts']) mkdirSync(out + d, { recursive: true });
+for (const d of ['artifact', 'youtube/fonts', 'pages/fonts', 'play/fonts']) mkdirSync(out + d, { recursive: true });
 writeFileSync(out + 'artifact/moonpull.html', await page('artifact'));
 writeFileSync(out + 'youtube/index.html', await page('youtube'));
 writeFileSync(out + 'pages/index.html', await page('pages'));
 writeFileSync(out + 'pages/.nojekyll', '');
-for (const [f] of FONTS) { copyFileSync(ROOT + 'fonts/' + f, out + 'youtube/fonts/' + f); copyFileSync(ROOT + 'fonts/' + f, out + 'pages/fonts/' + f); }
+copyFileSync(ROOT + 'site/privacy.html', out + 'pages/privacy.html');
+writeFileSync(out + 'play/index.html', await page('play'));
+mkdirSync(ROOT + 'android/app/src/main/assets/www/fonts', { recursive: true });
+for (const [f] of FONTS) { copyFileSync(ROOT + 'fonts/' + f, out + 'youtube/fonts/' + f); copyFileSync(ROOT + 'fonts/' + f, out + 'pages/fonts/' + f); copyFileSync(ROOT + 'fonts/' + f, out + 'play/fonts/' + f); copyFileSync(ROOT + 'fonts/' + f, ROOT + 'android/app/src/main/assets/www/fonts/' + f); }
+copyFileSync(out + 'play/index.html', ROOT + 'android/app/src/main/assets/www/index.html');
 copyFileSync(ROOT + 'fonts/OFL.txt', out + 'pages/fonts/OFL.txt');
 if (existsSync(ROOT + 'art/og.png')) copyFileSync(ROOT + 'art/og.png', out + 'pages/og.png');
 execSync('zip -X -q -9 -r ../moonpull-youtube.zip index.html fonts', { cwd: out + 'youtube' });

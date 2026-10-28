@@ -25,6 +25,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 bdi { unicode-bidi: isolate; }
 #ui { position: fixed; inset: 0; pointer-events: none; font-size: var(--u); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 #ui > * { pointer-events: auto; }
+.noads .btn.ad::before { display: none; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.2em; gap: 0.8em; }
 .dim { background: radial-gradient(ellipse at center, rgba(6, 8, 26, 0.35), rgba(6, 8, 26, 0.72)); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45em; min-height: 2.9em; padding: 0.55em 1.5em; border-radius: 999px; font-weight: 700; font-size: 1.05em;
@@ -1749,7 +1750,7 @@ const TEXT = {
     level: 'Level {n}', endless: 'Open Sea {n}', locked: 'Locked', needPearls: '{n} pearls to open', finishPrev: 'Finish the previous sea first',
     light: 'Moonlight', pearls: 'Pearls', flames: 'Flames',
     win: 'Lighthouse reached!', lose: 'The lantern went out', caught: 'Moonlight caught', best: 'Best',
-    double: 'Double it', doubleAd: 'Watch an ad: ×2 moonlight', second: 'Second chance', secondAd: 'Watch an ad: relight at the last buoy',
+    double: 'Double it', doubleAd: 'Watch an ad: ×2 moonlight', second: 'Second chance', secondAd: 'Watch an ad: relight at the last buoy', secondAdFree: 'Relight at the last buoy', bottleAdFree: 'Tap to open it',
     doubled: 'Doubled!', noReward: 'The ad did not finish, so no reward this time.',
     buy: 'Buy', owned: 'Owned', maxed: 'Max', lvl: 'Lv {n}', needLevel: 'Opens after {n}', gift: 'Gift',
     newRegion: 'New sea opened', unlocked: 'Unlocked',
@@ -1792,7 +1793,7 @@ const TEXT = {
     level: 'المرحلة {n}', endless: 'البحر المفتوح {n}', locked: 'مقفلة', needPearls: 'تحتاج {n} لؤلؤة', finishPrev: 'خلّص البحر اللي قبله أول',
     light: 'ضوء القمر', pearls: 'اللآلئ', flames: 'الشعلات',
     win: 'وصلت المنارة!', lose: 'انطفى الفانوس', caught: 'ضوء القمر اللي جمعته', best: 'الأفضل',
-    double: 'ضاعفه', doubleAd: 'شاهد إعلان: ضوء القمر ×٢', second: 'فرصة ثانية', secondAd: 'شاهد إعلان: تكمّل من آخر عوّامة',
+    double: 'ضاعفه', doubleAd: 'شاهد إعلان: ضوء القمر ×٢', second: 'فرصة ثانية', secondAd: 'شاهد إعلان: تكمّل من آخر عوّامة', secondAdFree: 'كمّل من آخر عوّامة', bottleAdFree: 'اضغط وافتحها',
     doubled: 'تضاعف!', noReward: 'الإعلان ما كمل، فما فيه مكافأة هالمرة.',
     buy: 'اشترِ', owned: 'عندك', maxed: 'الأعلى', lvl: 'مستوى {n}', needLevel: 'تنفتح بعد {n}', gift: 'هدية',
     newRegion: 'انفتح بحر جديد', unlocked: 'انفتح',
@@ -1856,7 +1857,7 @@ const TEXT = {
   const regionName = r => tr('r_' + regionKey(r));
   function applyLang() {
     document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.querySelectorAll('[data-t]').forEach(el => { el.textContent = tr(el.dataset.t); });
+    document.querySelectorAll('[data-t]').forEach(el => { const k = el.dataset.t; el.textContent = tr(NO_ADS && TEXT.en[k + 'Free'] ? k + 'Free' : k); });
     $('langBtn').textContent = lang === 'ar' ? 'EN' : 'ع';
     $('langBtn').setAttribute('aria-label', tr('language'));
     document.querySelectorAll('[data-back]').forEach(b => b.setAttribute('aria-label', tr('back')));
@@ -1905,7 +1906,9 @@ const TEXT = {
 
   // ---------- Platform: ads ----------
   let lastInter = 0, adBusy = false;
+  const NO_ADS = !!window.__noAds; // store build without any ads
   async function rewarded(id) {
+    if (NO_ADS) return true;
     if (adBusy) return false; adBusy = true; setPaused(true, 'ad');
     let ok = false;
     try {
@@ -2320,7 +2323,7 @@ const TEXT = {
     $('winPearls').innerHTML = [0, 1, 2].map(k => `<i class="${k < res.pearls ? 'on' : ''}" style="--d:${k * 0.25}s"></i>`).join('');
     $('winLight').textContent = num(res.light); $('winBonus').textContent = '+' + num(bonus); $('winTotal').textContent = num(res.total);
     $('winPct').textContent = num(Math.round(res.frac * 100)) + (lang === 'ar' ? '٪' : '%');
-    $('doubleBtn').hidden = false; $('doubleBtn').disabled = false;
+    $('doubleBtn').hidden = NO_ADS; $('doubleBtn').disabled = false;
     const nextOk = levelOpen(i + 1);
     $('nextBtn').hidden = !nextOk;
     const newRegion = firstTime && (info.local === (Core.REGIONS[info.region] || { levels: 99 }).levels - 1) && !info.endless;
@@ -2476,6 +2479,17 @@ const TEXT = {
     try { YT && YT.game.gameReady(); } catch (e) {}
   }
   // Exposed only for automated checks.
+  if (NO_ADS) document.documentElement.classList.add('noads');
+  window.__appLife = {
+    pause() { setPaused(true, 'system'); if (mode === 'play' && !pausedFlags.has('user')) { setPaused(true, 'user'); show('pause'); $('corner').hidden = false; } persist(); },
+    resume() { setPaused(false, 'system'); },
+    back() {
+      if (mode === 'play' && !isPaused()) { togglePause(); return 'handled'; }
+      if (mode === 'play' && pausedFlags.has('user')) { togglePause(); return 'handled'; }
+      if (current && current !== 'title') { show('title'); return 'handled'; }
+      persist(); return 'exit';
+    }
+  };
   window.__moon = { set timeScale(v) { timeScale = v; }, set driver(f) { driver = f; }, get world() { return world; }, get mode() { return mode; }, get save() { return save; }, get screen() { return current; }, startLevel, get paused() { return [...pausedFlags]; }, get quality() { return qLevel; }, persist };
   boot();
 })();
